@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de Fichas · Kermés</title>
+<style>
+:root{--bg:#faf6f0;--card:#fff;--ink:#2b2118;--mut:#7a6a5a;--line:#e8dfd3;--pollo:#e8890c;--pollo-bg:#fff2d9;--pollo-ln:#f6c46d;--chancho:#d6336c;--chancho-bg:#ffe6ef;--chancho-ln:#f5a3c0;--ok:#2e8b57;--qr:#2f6fdb;--efe:#2e8b57;--pen:#c0392b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:150px}
+header{background:var(--ink);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0}
+#estado{font-size:12px;padding:4px 8px;border-radius:99px;background:#ffffff22}
+.wrap{max-width:760px;margin:0 auto;padding:12px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.stat b{font-size:24px;display:block}
+.stat span{font-size:12px;color:var(--mut)}
+.stat small{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.bar{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);padding:8px 12px;border-radius:99px;font-size:14px;cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+input,select,button{font:inherit}
+input[type=text],input[type=number],input[type=search],select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.row{background:var(--card);border:2px solid var(--line);border-left-width:10px;border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.row.pollo{background:var(--pollo-bg);border-color:var(--pollo-ln);border-left-color:var(--pollo)}
+.row.chancho{background:var(--chancho-bg);border-color:var(--chancho-ln);border-left-color:var(--chancho)}
+.tag{display:inline-block;color:#fff;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px;margin-bottom:4px}
+.pollo .tag{background:var(--pollo)}
+.chancho .tag{background:var(--chancho)}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;margin-top:8px}
+.pill.pagado{background:#d9f2e3;color:#1b6b40}
+.pill.parcial{background:#ece3ff;color:#5b2fb0}
+.pill.pendiente{background:#fde2de;color:#a52a1e}
+.estado{margin-top:8px;font-size:13px;font-weight:600}
+.nota{margin-top:6px;background:#fff3cd;border-radius:8px;padding:6px 8px;font-size:13px}
+.tools .ed{color:var(--qr);font-size:13px}
+textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
+.plato{color:var(--mut)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.nombre{font-weight:700;font-size:17px}
+.plato{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer}
+.qty b{min-width:22px;text-align:center;font-size:18px}
+.pay{display:flex;gap:6px;margin-top:8px}
+.pay button{flex:1;padding:10px 4px;border-radius:10px;border:2px solid var(--line);background:#fff;cursor:pointer;font-weight:600;font-size:14px}
+.pay .q.on{background:var(--qr);color:#fff;border-color:var(--qr)}
+.pay .e.on{background:var(--efe);color:#fff;border-color:var(--efe)}
+.pay .p.on{background:var(--pen);color:#fff;border-color:var(--pen)}
+.tools{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;color:var(--mut)}
+.tools button{background:none;border:none;color:var(--pen);cursor:pointer;font-size:12px}
+.fab{position:fixed;right:16px;bottom:78px;background:var(--ink);color:#fff;border:none;border-radius:99px;padding:15px 22px;font-weight:700;font-size:16px;box-shadow:0 4px 14px #0004;cursor:pointer;z-index:6}
+.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;justify-content:center;z-index:10}
+.modal.open{display:flex}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px;max-height:92vh;overflow:auto}
+.sheet h2{margin:0 0 10px;font-size:18px}
+.sheet label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:11px;border-radius:10px;border:2px solid var(--line);background:#fff;cursor:pointer;font-weight:600}
+.seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn{width:100%;margin-top:14px;padding:13px;border:none;border-radius:12px;background:var(--ok);color:#fff;font-weight:700;font-size:16px;cursor:pointer}
+.btn.sec{background:#eee;color:var(--ink);margin-top:8px}
+.vacio{text-align:center;color:var(--mut);padding:30px}
+.aviso{background:#fff3cd;border:1px solid #f0d98a;padding:10px;border-radius:10px;font-size:13px;margin-bottom:10px}
+details{margin-top:14px}
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:7;padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;padding:12px 6px;border:none;background:none;font-size:15px;font-weight:700;color:var(--mut);cursor:pointer;position:relative}
+nav button.on{color:var(--ink);box-shadow:inset 0 3px 0 var(--ink)}
+nav .badge{background:var(--pen);color:#fff;border-radius:99px;font-size:12px;padding:1px 7px;margin-left:4px}
+h3.sec{margin:18px 0 8px;font-size:15px}
+.ticket{background:#faf6f0;border:2px solid var(--line);border-radius:12px;padding:12px;font-size:17px;line-height:1.5;margin:6px 0}
+.ticket.pollo{background:var(--pollo-bg);border-color:var(--pollo-ln)}
+.ticket.chancho{background:var(--chancho-bg);border-color:var(--chancho-ln)}
+.ent .big{font-size:30px;font-weight:800;line-height:1}
+.ent .big small{font-size:13px;font-weight:600;color:var(--mut)}
+.ent .acc{display:flex;gap:8px;margin-top:10px}
+.ent .acc button{flex:1;padding:14px 6px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+.ent .acc button.sec{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+.num{display:inline-block;background:var(--ink);color:#fff;border-radius:8px;padding:1px 8px;margin-right:6px;font-size:15px;font-weight:800}
+.hora{font-size:12px;color:var(--mut);margin-top:1px}
+.done{opacity:.85}
+.done .acc button{padding:8px;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍽️ Control de Fichas</h1>
+  <div><span id="estado">…</span> <button class="chip" style="padding:4px 10px" onclick="abrir('mAjustes')">⚙️</button></div>
+</header>
+
+<div class="wrap">
+  <div id="aviso"></div>
+
+  <div id="vCobro">
+  <div class="stats" id="stats"></div>
+
+  <input type="search" id="buscar" placeholder="🔍 Buscar nombre o # de pedido…" oninput="render()">
+
+  <div class="bar" id="filtros">
+    <button class="chip on" data-f="todos">Todos</button>
+    <button class="chip" data-f="pollo">🍗 Pollo</button>
+    <button class="chip" data-f="chancho">🐖 Chancho</button>
+    <button class="chip" data-f="pendientes">⏳ Pendientes</button>
+    <button class="chip" data-f="pagados">✅ Pagados</button>
+  </div>
+
+  <div id="lista"></div>
+  </div><!-- /vCobro -->
+
+  <div id="vEntrega" style="display:none">
+    <div class="stats" id="statsE"></div>
+    <input type="search" id="buscarE" placeholder="🔍 Buscar nombre o # de pedido…" oninput="render()">
+    <div class="bar" id="filtrosE">
+      <button class="chip on" data-f="todos">Todos</button>
+      <button class="chip" data-f="pollo">🍗 Pollo</button>
+      <button class="chip" data-f="chancho">🐖 Chancho</button>
+    </div>
+    <div class="bar" id="ordenE"><span style="align-self:center;font-size:13px;color:var(--mut)">Orden:</span>
+      <button class="chip on" data-o="num"># Pedido</button>
+      <button class="chip" data-o="pago">Hora de pago</button>
+    </div>
+    <h3 class="sec">📦 Por entregar (ya pagados)</h3>
+    <div id="listaE"></div>
+    <h3 class="sec">✅ Ya entregados</h3>
+    <div id="listaEnt"></div>
+  </div>
+</div>
+
+<nav>
+  <button id="tabCobro" class="on" onclick="vista('cobro')">💰 Cobro</button>
+  <button id="tabEntrega" onclick="vista('entrega')">📦 Entrega <span class="badge" id="badge">0</span></button>
+</nav>
+
+<!-- Modal confirmación -->
+<div class="modal" id="mConfirm" onclick="if(event.target===this)cerrar('mConfirm')">
+  <div class="sheet">
+    <h2 id="cTitulo"></h2>
+    <div class="ticket" id="cTicket"></div>
+    <button class="btn" id="cOk"></button>
+    <button class="btn sec" onclick="cerrar('mConfirm')">Cancelar</button>
+  </div>
+</div>
+
+<button class="fab" id="fab" onclick="abrirNuevo()">＋ Nueva ficha</button>
+
+<!-- Modal nueva ficha -->
+<div class="modal" id="mNuevo" onclick="if(event.target===this)cerrar('mNuevo')">
+  <div class="sheet">
+    <h2>Nueva venta</h2>
+    <label>Nombre</label>
+    <input type="text" id="nNombre" placeholder="Ej: María" list="nombres" autocomplete="off">
+    <datalist id="nombres"></datalist>
+    <label>Plato</label>
+    <div class="seg" id="nPlato">
+      <button data-v="pollo" class="on">🍗 Picante de pollo<br><small>30 Bs</small></button>
+      <button data-v="chancho">🐖 Chancho al horno<br><small>40 Bs</small></button>
+    </div>
+    <label>Cantidad de fichas</label>
+    <input type="number" id="nQty" value="1" min="1" inputmode="numeric">
+    <label>¿Pago?</label>
+    <div class="seg" id="nPago">
+      <button data-v="" class="on">⏳ Aún no</button>
+      <button data-v="qr">QR</button>
+      <button data-v="efectivo">Efectivo</button>
+    </div>
+    <button class="btn" onclick="guardarNuevo()">Guardar</button>
+    <button class="btn sec" onclick="cerrar('mNuevo')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal editar -->
+<div class="modal" id="mEditar" onclick="if(event.target===this)cerrar('mEditar')">
+  <div class="sheet">
+    <h2>Editar ficha</h2>
+    <label>Nombre</label>
+    <input type="text" id="eNombre">
+    <label>Plato</label>
+    <div class="seg" id="ePlato">
+      <button data-v="pollo">🍗 Picante de pollo</button>
+      <button data-v="chancho">🐖 Chancho al horno</button>
+    </div>
+    <label>Cantidad de fichas</label>
+    <input type="number" id="eQty" min="1" inputmode="numeric">
+    <label>Monto pagado (Bs) — déjalo vacío si pagó todo</label>
+    <input type="number" id="eAbono" min="0" inputmode="decimal" placeholder="Ej: 20">
+    <label>N.º de pedido</label>
+    <input type="number" id="eNum" min="1" inputmode="numeric">
+    <label>Nota</label>
+    <textarea id="eNota" rows="2" placeholder="Ej: Pagó solo 20 Bs, el resto después"></textarea>
+    <button class="btn" onclick="guardarEdicion()">Guardar cambios</button>
+    <button class="btn sec" onclick="cerrar('mEditar')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal ajustes -->
+<div class="modal" id="mAjustes" onclick="if(event.target===this)cerrar('mAjustes')">
+  <div class="sheet">
+    <h2>Ajustes</h2>
+    <label>Precio ficha · Picante de pollo (Bs)</label>
+    <input type="number" id="pPollo" min="0" inputmode="decimal" placeholder="30">
+    <label>Precio ficha · Chancho al horno (Bs)</label>
+    <input type="number" id="pChancho" min="0" inputmode="decimal" placeholder="40">
+    <button class="btn" onclick="guardarPrecios()">Guardar precios</button>
+
+    <details>
+      <summary>Herramientas</summary>
+      <button class="btn sec" onclick="cargarLista()">📥 Cargar lista inicial (la de Brandon)</button>
+      <button class="btn sec" onclick="numerarExistentes()">🔢 Numerar pedidos que aún no tienen número</button>
+      <button class="btn sec" onclick="exportarCSV()">📤 Exportar a Excel (.xlsx)</button>
+      <button class="btn sec" style="color:#c0392b" onclick="borrarTodo()">🗑️ Borrar todo</button>
+    </details>
+    <button class="btn sec" onclick="cerrar('mAjustes')">Cerrar</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* =====================================================
+   1) PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
+   (Firebase Console → Configuración del proyecto → Tus apps → Web)
+   Si lo dejas vacío, la app funciona igual pero guarda
+   solo en este celular (modo local) para que puedas probarla.
+   ===================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAwBn-yFuWNfsB7lVRjy-8uPM3srUKA5-w",
+  authDomain: "kermes-fichas.firebaseapp.com",
+  databaseURL: "https://kermes-fichas-default-rtdb.firebaseio.com",
+  projectId: "kermes-fichas",
+  storageBucket: "kermes-fichas.firebasestorage.app",
+  messagingSenderId: "485166887061",
+  appId: "1:485166887061:web:f72bafad2f80cd1f46ab9c"
+};
+
+const RUTA = "kermes"; // carpeta dentro de la base de datos
+/* ===================================================== */
+
+const LISTA_INICIAL = [
+  // [nombre, plato, cantidad, pago]
+  ["Ambar","pollo",1,"qr"],["Andrés","pollo",1,""],["Ramiro","pollo",1,""],["Israel","pollo",1,""],
+  ["Carmencita","pollo",2,""],["Jhisel","pollo",3,""],["Eliana","pollo",4,""],["Mariela","pollo",3,""],
+  ["Luis","pollo",2,""],["Anita","pollo",2,""],["Melvi","pollo",2,""],["Assis","pollo",1,""],
+  ["Lili","pollo",2,""],["Juan Pablo","pollo",1,""],["Teji","pollo",1,""],
+  ["Ceci","chancho",1,"efectivo"],["Ambar","chancho",1,"qr"],["Ely","chancho",1,""],["Gloria","chancho",2,""],
+  ["Ramiro","chancho",1,""],["Israel","chancho",2,"efectivo","Pagó solo 20 Bs en efectivo",20],["Carmencita","chancho",3,""],["Jhisel","chancho",2,""],
+  ["Eliana","chancho",3,""],["Mariela","chancho",3,""],["Luis","chancho",3,""],["Anita","chancho",3,""],
+  ["Melvi","chancho",3,""],["Assis","chancho",1,""],["Edwin","chancho",2,""],["Juanpa","chancho",3,""],
+  ["Joe","chancho",1,""],["Marianita","chancho",2,""]
+];
+
+let ordenes = {};      // id -> {nombre, plato, qty, pago, creado}
+const PRECIOS_BASE = {pollo:30, chancho:40};
+let precios = Object.assign({}, PRECIOS_BASE);
+let filtro = "todos";
+const usaFirebase = !!(firebaseConfig.databaseURL && firebaseConfig.apiKey);
+let db = null;
+
+/* ---------- Capa de datos ---------- */
+function idNuevo(){ return "o"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function iniciar(){
+  if(usaFirebase){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+      db.ref(RUTA+"/ordenes").on("value", s=>{ ordenes = s.val()||{}; render(); });
+      db.ref(RUTA+"/precios").on("value", s=>{ precios = Object.assign({}, PRECIOS_BASE, s.val()||{}); render(); });
+      db.ref(".info/connected").on("value", s=>{
+        const e=document.getElementById("estado");
+        e.textContent = s.val() ? "🟢 En línea" : "🔴 Sin conexión";
+      });
+    }catch(err){ document.getElementById("estado").textContent="⚠️ Error Firebase"; console.error(err); }
+  }else{
+    document.getElementById("estado").textContent="💾 Modo local";
+    document.getElementById("aviso").innerHTML='<div class="aviso">Estás en <b>modo local</b>: los datos se guardan solo en este celular. Pega tu configuración de Firebase en el archivo para compartirlos entre varios dispositivos.</div>';
+    ordenes = JSON.parse(localStorage.getItem("kermes_ordenes")||"{}");
+    precios = Object.assign({}, PRECIOS_BASE, JSON.parse(localStorage.getItem("kermes_precios")||"{}"));
+    render();
+  }
+}
+function persistirLocal(){ localStorage.setItem("kermes_ordenes", JSON.stringify(ordenes)); }
+
+function guardar(id, datos){
+  if(usaFirebase){ db.ref(RUTA+"/ordenes/"+id).update(datos); }
+  else{ ordenes[id]=Object.assign(ordenes[id]||{}, datos); Object.keys(ordenes[id]).forEach(k=>{ if(ordenes[id][k]===null) delete ordenes[id][k]; }); persistirLocal(); render(); }
+}
+function borrar(id){
+  if(usaFirebase){ db.ref(RUTA+"/ordenes/"+id).remove(); }
+  else{ delete ordenes[id]; persistirLocal(); render(); }
+}
+
+/* ---------- Número de pedido ---------- */
+function reservarNums(k,cb){
+  if(usaFirebase){
+    db.ref(RUTA+"/contador").transaction(c=>(c||0)+k,(e,ok,snap)=>{ if(ok&&snap) cb(snap.val()-k); else cb(null); });
+  }else{
+    const ini=+localStorage.getItem("kermes_contador")||0;
+    localStorage.setItem("kermes_contador",ini+k); cb(ini);
+  }
+}
+function hora(ts){ return ts?new Date(ts).toLocaleTimeString("es-BO",{hour:"2-digit",minute:"2-digit",hour12:false}):""; }
+function numTag(o){ return o.num?`<span class="num">#${o.num}</span>`:""; }
+function subTxt(o){
+  const t=[]; if(o.creado) t.push("🕒 Pedido "+hora(o.creado)); if(o.pagadoEn) t.push("pagó "+hora(o.pagadoEn));
+  return t.length?`<div class="hora">${t.join(" · ")}</div>`:"";
+}
+function coincide(o,q){ return !q || o.nombre.toLowerCase().includes(q) || String(o.num||"")===q.replace("#",""); }
+function numerarExistentes(){
+  const sin=Object.entries(ordenes).filter(([id,o])=>!o.num).sort((a,b)=>(a[1].creado||0)-(b[1].creado||0)||a[1].nombre.localeCompare(b[1].nombre));
+  if(!sin.length){ alert("Todas las fichas ya tienen número."); return; }
+  if(!confirm("Se numerarán "+sin.length+" fichas que no tienen número, en el orden en que fueron registradas.\n¿Continuar?")) return;
+  reservarNums(sin.length, ini=>{
+    if(ini==null) return;
+    if(usaFirebase){
+      const upd={}; sin.forEach(([id],i)=>{ upd["ordenes/"+id+"/num"]=ini+i+1; });
+      db.ref(RUTA).update(upd);
+    }else{ sin.forEach(([id],i)=>{ ordenes[id].num=ini+i+1; }); persistirLocal(); render(); }
+  });
+  cerrar("mAjustes");
+}
+
+/* ---------- Acciones ---------- */
+const NOM={pollo:"Picante de pollo",chancho:"Chancho al horno"}, EMO={pollo:"🍗",chancho:"🐖"};
+let tConfirm=0;
+function pedirConfirmacion(titulo, o, extra, textoOk, color, fn){
+  document.getElementById("cTitulo").textContent=titulo;
+  const t=document.getElementById("cTicket");
+  t.className="ticket "+o.plato;
+  t.innerHTML="<b>"+(o.num?"#"+o.num+" ":"")+esc(o.nombre)+"</b><br>"+(extra||((o.qty||1)+" × "+EMO[o.plato]+" "+NOM[o.plato]+" · "+totalDe(o)+" Bs"));
+  const ok=document.getElementById("cOk");
+  ok.textContent=textoOk; ok.style.background=color;
+  tConfirm=Date.now();
+  ok.onclick=()=>{ if(Date.now()-tConfirm<450) return; cerrar("mConfirm"); fn(); };
+  abrir("mConfirm");
+}
+function setPago(id, pago){
+  const o=ordenes[id];
+  if((o.pago||"")===pago && o.abonado==null) return;
+  const det=(o.qty||1)+" × "+EMO[o.plato]+" "+NOM[o.plato]+" · <b>"+totalDe(o)+" Bs</b>";
+  const hecho=()=>guardar(id,{pago, abonado:null, pagadoEn: pago?Date.now():null});
+  if(pago==="qr") pedirConfirmacion("¿Confirmas que pagó por QR?",o,det+"<br>💳 Revisa que el QR haya llegado","✔ Sí, pagó por QR","#2f6fdb",hecho);
+  else if(pago==="efectivo") pedirConfirmacion("¿Confirmas que pagó en efectivo?",o,det+"<br>💵 Ya recibiste el dinero","✔ Sí, pagó en efectivo","#2e8b57",hecho);
+  else pedirConfirmacion("¿Volver a PENDIENTE?",o,det+"<br>Se quitará el pago registrado","Sí, volver a pendiente","#c0392b",hecho);
+}
+function cambiarQty(id, d){
+  const o=ordenes[id];
+  const q=Math.max(1,(o.qty||1)+d);
+  if(q===(o.qty||1)) return;
+  const hecho=()=>guardar(id,{qty:q, entregados:Math.min(o.entregados||0,q)});
+  if(o.pago) pedirConfirmacion("Esta ficha ya tiene pago",o,"Cambiar de "+(o.qty||1)+" a <b>"+q+"</b> fichas ("+(precios[o.plato]*q)+" Bs)","Sí, cambiar cantidad","#2b2118",hecho);
+  else hecho();
+}
+function eliminar(id){
+  const o=ordenes[id];
+  pedirConfirmacion("¿Eliminar esta ficha?",o,null,"🗑 Sí, eliminar","#c0392b",()=>borrar(id));
+}
+
+/* ---------- Entrega ---------- */
+function entDe(o){ return Math.min(o.entregados||0,o.qty||1); }
+function pagadoTotal(o){ return !!o.pago && debeDe(o)<=0; }
+function entregar(id,k){
+  const o=ordenes[id], falta=(o.qty||1)-entDe(o); k=Math.min(k,falta);
+  pedirConfirmacion("¿Confirmas la entrega?",o,k+" × "+EMO[o.plato]+" "+NOM[o.plato]+(k<(o.qty||1)?"<br>(de "+(o.qty||1)+" fichas en total)":""),"📦 Sí, entregado","#2b2118",
+    ()=>guardar(id,{entregados:entDe(o)+k, entregadoEn:Date.now()}));
+}
+function deshacerEntrega(id){
+  const o=ordenes[id];
+  pedirConfirmacion("¿Deshacer una entrega?",o,"Se quitará 1 ficha de las entregadas ("+entDe(o)+" → "+(entDe(o)-1)+")","↩ Sí, deshacer","#c0392b",
+    ()=>guardar(id,{entregados:Math.max(0,entDe(o)-1)}));
+}
+let vistaActual="cobro", filtroE="todos", ordenE="num";
+function vista(v){
+  vistaActual=v;
+  document.getElementById("vCobro").style.display=v==="cobro"?"":"none";
+  document.getElementById("vEntrega").style.display=v==="entrega"?"":"none";
+  document.getElementById("fab").style.display=v==="cobro"?"":"none";
+  document.getElementById("tabCobro").classList.toggle("on",v==="cobro");
+  document.getElementById("tabEntrega").classList.toggle("on",v==="entrega");
+  history.replaceState(null,"",v==="entrega"?"#entrega":location.pathname+location.search);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("#ordenE .chip").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll("#ordenE .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on"); ordenE=c.dataset.o; render();
+});
+document.querySelectorAll("#filtrosE .chip").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll("#filtrosE .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on"); filtroE=c.dataset.f; render();
+});
+
+/* ---------- Nueva ficha ---------- */
+let nPlato="pollo", nPago="";
+function segmento(idSeg, cb){
+  document.querySelectorAll("#"+idSeg+" button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("#"+idSeg+" button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); cb(b.dataset.v);
+  });
+}
+segmento("nPlato", v=>nPlato=v);
+segmento("nPago", v=>nPago=v);
+
+function abrirNuevo(){
+  document.getElementById("nNombre").value="";
+  document.getElementById("nQty").value=1;
+  document.querySelectorAll("#nPago button").forEach((b,i)=>b.classList.toggle("on",i===0)); nPago="";
+  const plato = filtro==="chancho"?"chancho":"pollo"; nPlato=plato;
+  document.querySelectorAll("#nPlato button").forEach(b=>b.classList.toggle("on",b.dataset.v===plato));
+  const nombres=[...new Set(Object.values(ordenes).map(o=>o.nombre))].sort();
+  document.getElementById("nombres").innerHTML=nombres.map(n=>`<option value="${esc(n)}">`).join("");
+  abrir("mNuevo");
+  setTimeout(()=>document.getElementById("nNombre").focus(),100);
+}
+function guardarNuevo(){
+  const nombre=document.getElementById("nNombre").value.trim();
+  const qty=Math.max(1,parseInt(document.getElementById("nQty").value)||1);
+  if(!nombre){ alert("Escribe el nombre"); return; }
+  const id=idNuevo(), plato=nPlato, pago=nPago, creado=Date.now();
+  cerrar("mNuevo");
+  reservarNums(1, ini=>{
+    const d={nombre,plato,qty,pago,creado};
+    if(ini!=null) d.num=ini+1;
+    if(pago) d.pagadoEn=Date.now();
+    guardar(id,d);
+  });
+}
+
+/* ---------- Editar ---------- */
+let editId=null, ePlato="pollo";
+segmento("ePlato", v=>ePlato=v);
+function abrirEditar(id){
+  const o=ordenes[id]; editId=id; ePlato=o.plato;
+  document.getElementById("eNombre").value=o.nombre;
+  document.getElementById("eQty").value=o.qty||1;
+  document.getElementById("eAbono").value=(o.abonado!=null)?o.abonado:"";
+  document.getElementById("eNota").value=o.nota||"";
+  document.getElementById("eNum").value=o.num||"";
+  document.querySelectorAll("#ePlato button").forEach(b=>b.classList.toggle("on",b.dataset.v===o.plato));
+  abrir("mEditar");
+}
+function guardarEdicion(){
+  const nombre=document.getElementById("eNombre").value.trim();
+  const qty=Math.max(1,parseInt(document.getElementById("eQty").value)||1);
+  const ab=document.getElementById("eAbono").value;
+  const nota=document.getElementById("eNota").value.trim();
+  if(!nombre){ alert("Escribe el nombre"); return; }
+  if(!confirm("¿Guardar los cambios de "+nombre+"?")) return;
+  const datos={nombre,plato:ePlato,qty,nota:nota||null,abonado:ab===""?null:parseFloat(ab),num:parseInt(document.getElementById("eNum").value)||null};
+  if(datos.abonado!=null && !ordenes[editId].pago){ datos.pago="efectivo"; }
+  guardar(editId,datos);
+  cerrar("mEditar");
+}
+
+/* ---------- Ajustes ---------- */
+function guardarPrecios(){
+  const np={pollo:parseFloat(document.getElementById("pPollo").value)||0, chancho:parseFloat(document.getElementById("pChancho").value)||0};
+  if(!confirm("¿Cambiar precios?\nPicante de pollo: "+np.pollo+" Bs\nChancho al horno: "+np.chancho+" Bs\n\nLos totales se recalculan para todas las fichas.")) return;
+  precios=np;
+  if(usaFirebase) db.ref(RUTA+"/precios").set(precios);
+  else localStorage.setItem("kermes_precios", JSON.stringify(precios));
+  cerrar("mAjustes"); render();
+}
+function exportarCSV(){
+  if(typeof XLSX==="undefined"){ alert("No se pudo cargar el generador de Excel (¿sin internet?). Se exportará un CSV simple."); return exportarCSVSimple(); }
+  const ENC=["N.º pedido","Hora pedido","Nombre","Plato","Fichas","Precio c/u (Bs)","Total (Bs)","Estado de pago","Cobrado QR (Bs)","Cobrado Efectivo (Bs)","Falta cobrar (Bs)","Fichas entregadas","Nota"];
+  const ordenar=(a,b)=>(a.num||1e9)-(b.num||1e9)||(a.creado||0)-(b.creado||0)||a.nombre.localeCompare(b.nombre);
+  const filaDe=o=>{
+    const cob=cobradoDe(o), debe=debeDe(o);
+    const est=!o.pago?"Pendiente":(debe>0?"Pago parcial ("+(o.pago==="qr"?"QR":"Efectivo")+")":(o.pago==="qr"?"Pagado QR":"Pagado Efectivo"));
+    return [o.num||"",hora(o.creado),o.nombre,NOM[o.plato],o.qty||1,precios[o.plato]||0,totalDe(o),est,o.pago==="qr"?cob:0,o.pago==="efectivo"?cob:0,debe,entDe(o),o.nota||""];
+  };
+  const hojaDe=lista=>{
+    const filas=lista.slice().sort(ordenar).map(filaDe), n=filas.length, r=n+2;
+    const ws=XLSX.utils.aoa_to_sheet([ENC,...filas]);
+    ws["C"+r]={t:"s",v:"TOTAL"};
+    ["E","G","I","J","K","L"].forEach(c=>{
+      const idx=c.charCodeAt(0)-65, v=filas.reduce((a,f)=>a+(+f[idx]||0),0);
+      ws[c+r]= n ? {t:"n",f:`SUM(${c}2:${c}${n+1})`,v} : {t:"n",v:0};
+    });
+    ws["!ref"]="A1:M"+r;
+    ws["!cols"]=[8,12,22,20,8,14,12,22,16,20,16,16,34].map(w=>({wch:w}));
+    return ws;
+  };
+  const todos=Object.values(ordenes);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,hojaDe(todos),"Todos");
+  XLSX.utils.book_append_sheet(wb,hojaDe(todos.filter(o=>o.plato==="pollo")),"Pollo");
+  XLSX.utils.book_append_sheet(wb,hojaDe(todos.filter(o=>o.plato==="chancho")),"Chancho");
+  // Resumen
+  const res=[["Plato","Fichas vendidas","Total (Bs)","Cobrado QR (Bs)","Cobrado Efectivo (Bs)","Falta cobrar (Bs)","Fichas entregadas"]];
+  ["pollo","chancho"].forEach(k=>{
+    const L=todos.filter(o=>o.plato===k), f=x=>L.reduce((a,o)=>a+x(o),0);
+    res.push([NOM[k],f(o=>o.qty||1),f(totalDe),f(o=>o.pago==="qr"?cobradoDe(o):0),f(o=>o.pago==="efectivo"?cobradoDe(o):0),f(debeDe),f(entDe)]);
+  });
+  const rs=XLSX.utils.aoa_to_sheet(res);
+  rs["A4"]={t:"s",v:"TOTAL"};
+  ["B","C","D","E","F","G"].forEach(c=>{
+    const i=c.charCodeAt(0)-65;
+    rs[c+"4"]={t:"n",f:`SUM(${c}2:${c}3)`,v:res[1][i]+res[2][i]};
+  });
+  rs["!ref"]="A1:G4"; rs["!cols"]=[20,16,14,16,20,18,18].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,rs,"Resumen");
+  XLSX.writeFile(wb,"kermes_fichas.xlsx");
+}
+function cargarLista(){
+  if(Object.keys(ordenes).length && !confirm("Ya hay fichas registradas. ¿Agregar la lista inicial igual? (puede duplicar)")) return;
+  const t=Date.now();
+  cerrar("mAjustes");
+  reservarNums(LISTA_INICIAL.length, ini=>{
+    const lote={};
+    LISTA_INICIAL.forEach(([nombre,plato,qty,pago,nota,abonado],i)=>{ const o={nombre,plato,qty,pago,creado:t+i}; if(ini!=null) o.num=ini+i+1; if(nota) o.nota=nota; if(abonado!=null) o.abonado=abonado; lote[idNuevo()+i]=o; });
+    if(usaFirebase) db.ref(RUTA+"/ordenes").update(lote);
+    else{ Object.assign(ordenes,lote); persistirLocal(); render(); }
+  });
+}
+function borrarTodo(){
+  if(!confirm("¿Borrar TODAS las fichas?")) return;
+  if(!confirm("Seguro seguro. No se puede deshacer.")) return;
+  if(usaFirebase) db.ref(RUTA+"/ordenes").remove();
+  else{ ordenes={}; persistirLocal(); render(); }
+  cerrar("mAjustes");
+}
+function exportarCSVSimple(){
+  const filas=[["N.º pedido","Hora pedido","Nombre","Plato","Fichas","Pago","Entregadas"]];
+  Object.values(ordenes).sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(o=>
+    filas.push([o.num||"",hora(o.creado),o.nombre,o.plato==="pollo"?"Picante de pollo":"Chancho al horno",o.qty,o.pago||"pendiente",o.entregados||0]));
+  const csv="\ufeff"+filas.map(f=>f.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="kermes_fichas.csv"; a.click();
+}
+
+/* ---------- Render ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function abrir(id){
+  if(id==="mAjustes"){ document.getElementById("pPollo").value=precios.pollo||""; document.getElementById("pChancho").value=precios.chancho||""; }
+  document.getElementById(id).classList.add("open");
+}
+function cerrar(id){ document.getElementById(id).classList.remove("open"); }
+
+document.querySelectorAll("#filtros .chip").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll("#filtros .chip").forEach(x=>x.classList.remove("on"));
+  c.classList.add("on"); filtro=c.dataset.f; render();
+});
+
+function totalDe(o){ return (precios[o.plato]||0)*(o.qty||1); }
+function cobradoDe(o){ if(!o.pago) return 0; return (o.abonado!=null && o.abonado!=="") ? Math.min(+o.abonado,totalDe(o)) : totalDe(o); }
+function debeDe(o){ return totalDe(o)-cobradoDe(o); }
+function stats(){
+  const s={pollo:{t:0,p:0},chancho:{t:0,p:0},qr:0,efe:0,pend:0,bs:0,bsPend:0};
+  Object.values(ordenes).forEach(o=>{
+    const q=o.qty||1, cob=cobradoDe(o), debe=debeDe(o);
+    s[o.plato].t+=q;
+    if(o.pago==="qr") s.qr+=cob; else if(o.pago==="efectivo") s.efe+=cob;
+    s.bs+=cob; s.bsPend+=debe;
+    if(debe<=0 && o.pago){ s[o.plato].p+=q; } else { s.pend+=q; }
+  });
+  return s;
+}
+function render(){
+  renderCobro(); renderEntrega();
+}
+function filaCobro(id,o){
+  const total=totalDe(o), cob=cobradoDe(o), debe=debeDe(o), pu=precios[o.plato]||0;
+  const completo = o.pago && debe<=0, parcial = o.pago && debe>0;
+  const metodo = o.pago==="qr"?"QR":"efectivo";
+  const pill = completo ? `<span class="pill pagado">✅ Pagado ${total} Bs · ${metodo}</span>`
+    : parcial ? `<span class="pill parcial">🟣 Pagó ${cob} de ${total} Bs (${metodo}) · falta ${debe} Bs</span>`
+    : `<span class="pill pendiente">⏳ Sin pagar · ${total} Bs</span>`;
+  const ent = pagadoTotal(o) ? `<span class="pill" style="background:#e7e7e7;margin-left:6px">📦 ${entDe(o)}/${o.qty||1} entregadas</span>` : "";
+  return `<div class="row ${o.plato}">
+    <div class="top">
+      <div><span class="tag">${EMO[o.plato]} ${NOM[o.plato]} · ${pu} Bs</span>
+        <div class="nombre">${numTag(o)}${esc(o.nombre)}</div>${subTxt(o)}</div>
+      <div class="qty"><button onclick="cambiarQty('${id}',-1)">−</button><b>${o.qty||1}</b><button onclick="cambiarQty('${id}',1)">＋</button></div>
+    </div>
+    <div class="pay">
+      <button class="p ${!o.pago?"on":""}" onclick="setPago('${id}','')">⏳ Pendiente</button>
+      <button class="q ${o.pago==="qr"?"on":""}" onclick="setPago('${id}','qr')">QR</button>
+      <button class="e ${o.pago==="efectivo"?"on":""}" onclick="setPago('${id}','efectivo')">Efectivo</button>
+    </div>
+    <div>${pill}${ent}</div>
+    ${o.nota?`<div class="nota">📝 ${esc(o.nota)}</div>`:""}
+    <div class="tools"><button class="ed" onclick="abrirEditar('${id}')">✏️ Editar / nota</button><button onclick="eliminar('${id}')">Eliminar</button></div>
+  </div>`;
+}
+function renderCobro(){
+  const s=stats();
+  const fQR=Object.values(ordenes).filter(o=>o.pago==="qr"&&debeDe(o)<=0).reduce((a,o)=>a+(o.qty||1),0);
+  const fEF=Object.values(ordenes).filter(o=>o.pago==="efectivo"&&debeDe(o)<=0).reduce((a,o)=>a+(o.qty||1),0);
+  document.getElementById("stats").innerHTML=`
+    <div class="stat"><b>${s.pollo.t}</b><span>🍗 Pollo vendidas</span><small>${s.pollo.p} pagadas</small></div>
+    <div class="stat"><b>${s.chancho.t}</b><span>🐖 Chancho vendidas</span><small>${s.chancho.p} pagadas</small></div>
+    <div class="stat"><b>${s.pend}</b><span>⏳ Fichas por cobrar</span><small>Faltan ${s.bsPend} Bs</small></div>
+    <div class="stat"><b>${fQR} / ${fEF}</b><span>QR / Efectivo (fichas)</span><small>QR ${s.qr} Bs · Efectivo ${s.efe} Bs<br>Cobrado: ${s.bs} Bs</small></div>`;
+
+  const q=document.getElementById("buscar").value.trim().toLowerCase();
+  let arr=Object.entries(ordenes).filter(([id,o])=>{
+    if(!coincide(o,q)) return false;
+    if(filtro==="pollo"||filtro==="chancho") return o.plato===filtro;
+    if(filtro==="pendientes") return debeDe(o)>0;
+    if(filtro==="pagados") return debeDe(o)<=0;
+    return true;
+  });
+  arr.sort((a,b)=>(debeDe(a[1])<=0?1:0)-(debeDe(b[1])<=0?1:0) || (a[1].num||1e9)-(b[1].num||1e9) || a[1].nombre.localeCompare(b[1].nombre));
+  document.getElementById("lista").innerHTML = arr.length ? arr.map(([id,o])=>filaCobro(id,o)).join("")
+    : '<div class="vacio">No hay fichas aquí todavía.<br>Toca «＋ Nueva ficha» o carga la lista inicial desde ⚙️.</div>';
+}
+function renderEntrega(){
+  const todos=Object.entries(ordenes);
+  const pagadas=todos.filter(([id,o])=>pagadoTotal(o));
+  const porEnt={pollo:0,chancho:0}, yaEnt={pollo:0,chancho:0};
+  pagadas.forEach(([id,o])=>{ porEnt[o.plato]+=(o.qty||1)-entDe(o); yaEnt[o.plato]+=entDe(o); });
+  const sinPagar=todos.filter(([id,o])=>!pagadoTotal(o)).reduce((a,[id,o])=>a+(o.qty||1),0);
+  const totalPor=porEnt.pollo+porEnt.chancho;
+  document.getElementById("badge").textContent=totalPor;
+  document.getElementById("statsE").innerHTML=`
+    <div class="stat" style="border:2px solid var(--pollo-ln);background:var(--pollo-bg)"><b>${porEnt.pollo}</b><span>🍗 Pollo por entregar</span><small>${yaEnt.pollo} ya entregadas</small></div>
+    <div class="stat" style="border:2px solid var(--chancho-ln);background:var(--chancho-bg)"><b>${porEnt.chancho}</b><span>🐖 Chancho por entregar</span><small>${yaEnt.chancho} ya entregadas</small></div>
+    <div class="stat"><b>${totalPor}</b><span>📦 Pagadas sin entregar</span></div>
+    <div class="stat"><b>${sinPagar}</b><span>⏳ Sin pagar (aún no se entregan)</span></div>`;
+
+  const q=document.getElementById("buscarE").value.trim().toLowerCase();
+  const pasa=o=>coincide(o,q) && (filtroE==="todos"||o.plato===filtroE);
+  const orden=o=>o.pagadoEn||o.creado||0;
+
+  const por=pagadas.filter(([id,o])=>entDe(o)<(o.qty||1)&&pasa(o)).sort((a,b)=> ordenE==="num" ? ((a[1].num||1e9)-(b[1].num||1e9) || (a[1].creado||0)-(b[1].creado||0)) : orden(a[1])-orden(b[1]));
+  document.getElementById("listaE").innerHTML = por.length ? por.map(([id,o])=>{
+    const falta=(o.qty||1)-entDe(o);
+    const botones = falta>1
+      ? `<button class="sec" onclick="entregar('${id}',1)">Entregar 1</button><button onclick="entregar('${id}',${falta})">Entregar las ${falta}</button>`
+      : `<button onclick="entregar('${id}',1)">📦 Entregar</button>`;
+    return `<div class="row ${o.plato} ent">
+      <span class="tag">${EMO[o.plato]} ${NOM[o.plato]}</span>
+      <div class="top"><div><div class="nombre">${numTag(o)}${esc(o.nombre)}</div>${subTxt(o)}</div>
+        <div class="big">${falta}<small> por entregar${(o.qty||1)>1?" (de "+(o.qty||1)+")":""}</small></div></div>
+      ${o.nota?`<div class="nota">📝 ${esc(o.nota)}</div>`:""}
+      <div class="acc">${botones}</div></div>`;
+  }).join("") : '<div class="vacio">No hay pedidos pagados esperando entrega.</div>';
+
+  const hechos=todos.filter(([id,o])=>entDe(o)>0&&pasa(o)).sort((a,b)=>(b[1].entregadoEn||0)-(a[1].entregadoEn||0)).slice(0,40);
+  document.getElementById("listaEnt").innerHTML = hechos.length ? hechos.map(([id,o])=>`
+    <div class="row ${o.plato} ent done">
+      <div class="top"><div><span class="tag">${EMO[o.plato]} ${NOM[o.plato]}</span><div class="nombre">${numTag(o)}${esc(o.nombre)}</div>${subTxt(o)}</div>
+        <div class="big">${entDe(o)}<small> / ${o.qty||1} entregadas</small></div></div>
+      <div class="acc"><button class="sec" onclick="deshacerEntrega('${id}')">↩ Deshacer 1</button></div>
+    </div>`).join("") : '<div class="vacio">Aún no se entregó nada.</div>';
+}
+
+window.addEventListener("hashchange",()=>vista(location.hash==="#entrega"?"entrega":"cobro"));
+if(location.hash==="#entrega") vista("entrega");
+iniciar();
+</script>
+</body>
+</html>
